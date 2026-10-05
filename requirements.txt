@@ -1,0 +1,10 @@
+# Versions used to produce the committed results (Python 3.14).
+numpy==2.5.3
+pandas==2.3.3
+scipy==1.18.1
+lifelines==0.30.3
+formulaic==1.2.2
+matplotlib==3.11.2
+xenaPython==1.0.14
+PyYAML==6.0.3
+pytest==9.1.1

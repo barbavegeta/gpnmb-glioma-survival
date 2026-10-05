@@ -1,0 +1,52 @@
+project:
+  target_gene: GPNMB
+  random_seed: 42
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  results: results
+
+source:
+  # TCGA Pan-Cancer Atlas on the UCSC Xena hub (open access, no data use agreement).
+  hub: https://pancanatlas.xenahubs.net
+  expression: EB++AdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.xena  # batch-corrected, log2(x+1)
+  survival: Survival_SupplementalTable_S1_20171025_xena_sp           # TCGA-CDR, Liu et al. 2018
+  subtypes: TCGASubtype.20170308.tsv                                 # incl. Ceccarelli et al. 2016 glioma
+  phenotype: TCGA_phenotype_denseDataOnlyDownload.tsv
+
+cohort:
+  cancer_types: [LGG, GBM]
+  sample_type_code: "01"          # primary solid tumour; one sample per patient
+
+# Ceccarelli et al. (2016) split gliomas by IDH status before clustering by methylation,
+# so each cluster maps to exactly one molecular class.
+molecular_class:
+  Codel: IDHmut-codel
+  G-CIMP-high: IDHmut-noncodel
+  G-CIMP-low: IDHmut-noncodel
+  Classic-like: IDHwt
+  Mesenchymal-like: IDHwt
+  LGm6-GBM: IDHwt
+  PA-like: IDHwt
+molecular_reference: IDHmut-codel
+
+# Pre-specified before any survival association was examined.
+analysis:
+  primary_endpoint: OS
+  secondary_endpoint: PFI
+  exposure_scale: per_sd          # GPNMB log2 expression standardised to mean 0, SD 1
+  age_scale_years: 10
+  primary_covariates: [age_10y, male, grade, molecular_class]
+  model_sequence:                 # shows how adjustment changes the GPNMB estimate
+    unadjusted: []
+    demographics: [age_10y, male]
+    primary: [age_10y, male, grade, molecular_class]
+  ph_test_alpha: 0.05             # Schoenfeld-residual test; violators are stratified, not dropped
+  spline_df: 3                    # non-linearity check: spline vs linear GPNMB, likelihood ratio test
+  km_groups: tertiles             # descriptive only; no data-driven "optimal" cut-point
+  bootstrap_reps: 1000            # optimism of C-index gain from adding GPNMB
+  sensitivity:
+    - secondary_endpoint
+    - lgg_only
+    - gbm_only
